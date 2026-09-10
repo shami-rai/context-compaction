@@ -20,6 +20,10 @@ export const BUDGET_USD = 8;
 // No single run may spend more than this. A run is refused if the spend so far
 // plus this cap could cross the budget, so the budget cannot be overrun.
 const PER_RUN_CAP_USD = 0.6;
+// The cap is checked after each response, so a capped run overshoots it by up
+// to one turn's cost (one keep1-nothink run stopped at $0.648). The refusal
+// check adds this margin so the overshoot cannot push the total past budget.
+const OVERSHOOT_MARGIN_USD = 0.15;
 
 const argv = process.argv.slice(2);
 const flag = (k) => argv.includes(`--${k}`);
@@ -48,7 +52,7 @@ for (const name of names) {
   const file = probe ? `${RUNS_DIR}/probes.jsonl` : `${RUNS_DIR}/${short}-${effortTag}-${name}.jsonl`;
   for (let i = 1; i <= n; i++) {
     const before = spent();
-    if (before + PER_RUN_CAP_USD > BUDGET_USD) {
+    if (before + PER_RUN_CAP_USD + OVERSHOOT_MARGIN_USD > BUDGET_USD) {
       console.log(`budget: $${before.toFixed(3)} spent, next run could cross $${BUDGET_USD}. Stopping.`);
       process.exit(0);
     }

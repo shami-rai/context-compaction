@@ -41,6 +41,18 @@ function sortKeys(o) {
   return Object.fromEntries(Object.keys(o).sort().map((k) => [k, o[k]]));
 }
 
+// The most tool results hidden from the model on any single request, whoever
+// hid them: the client transform's own count, or the server's
+// cleared_tool_uses. A configured strategy that never fires scores 0 here,
+// so it cannot pass for one that fired and was survived.
+export function maxHidden(run) {
+  const client = (run.compaction ?? []).map((s) => s.cleared ?? 0);
+  const server = run.trace.map((t) =>
+    (t.contextManagement?.applied_edits ?? []).reduce((s, e) => s + (e.cleared_tool_uses ?? 0), 0),
+  );
+  return Math.max(0, ...client, ...server);
+}
+
 const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
 
 export function summarise(runs) {
@@ -67,6 +79,7 @@ export function summarise(runs) {
       toolCalls: mean(rs.map((r) => r.toolCalls)),
       toolErrors: mean(rs.map((r) => r.toolErrors)),
       requeries: mean(rs.map((r) => r.requeries)),
+      hidden: mean(rs.map(maxHidden)),
       peakContext: mean(rs.map((r) => r.peakContext)),
       cost: mean(rs.map((r) => r.costUSD)),
       cacheWrite: mean(rs.map((r) => r.usage.cacheWrite)),

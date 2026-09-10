@@ -20,12 +20,12 @@ const rows = summarise(runs).sort(
 const f0 = (x) => x.toFixed(0);
 const f1 = (x) => x.toFixed(1);
 const lines = [
-  '| model | effort | condition | n | correct | compare correct | turns | tool calls | re-queries | tool errors | peak context | cost / run | stops |',
-  '|---|---|---|---|---|---|---|---|---|---|---|---|---|',
+  '| model | effort | condition | n | correct | compare correct | turns | tool calls | re-queries | tool errors | results hidden (max) | peak context | cost / run | stops |',
+  '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|',
   ...rows.map(
     (r) =>
       `| ${r.model} | ${r.effort} | ${r.condition} | ${r.n} | ${r.correct}/${r.n} | ${r.compareCorrect}/${r.n} | ` +
-      `${f1(r.turns)} | ${f1(r.toolCalls)} | ${f1(r.requeries)} | ${f1(r.toolErrors)} | ${f0(r.peakContext)} | ` +
+      `${f1(r.turns)} | ${f1(r.toolCalls)} | ${f1(r.requeries)} | ${f1(r.toolErrors)} | ${f1(r.hidden)} | ${f0(r.peakContext)} | ` +
       `$${r.cost.toFixed(3)} | ${Object.entries(r.stops).map(([k, v]) => `${k} ${v}`).join(', ')} |`,
   ),
 ];
