@@ -69,6 +69,9 @@ export function summarise(runs) {
       requeries: mean(rs.map((r) => r.requeries)),
       peakContext: mean(rs.map((r) => r.peakContext)),
       cost: mean(rs.map((r) => r.costUSD)),
+      cacheWrite: mean(rs.map((r) => r.usage.cacheWrite)),
+      cacheRead: mean(rs.map((r) => r.usage.cacheRead)),
+      output: mean(rs.map((r) => r.usage.output)),
       totalCost: rs.reduce((s, r) => s + r.costUSD, 0),
       stops,
     };

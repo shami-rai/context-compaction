@@ -29,6 +29,20 @@ const lines = [
       `$${r.cost.toFixed(3)} | ${Object.entries(r.stops).map(([k, v]) => `${k} ${v}`).join(', ')} |`,
   ),
 ];
+// Where the money went. Every compaction edit moves the prompt-cache prefix,
+// so the same history is written to cache (1.25x input price) instead of read
+// from it (0.1x). This table is what shows that.
+lines.push(
+  '',
+  'Mean tokens per run, by how they were billed:',
+  '',
+  '| model | effort | condition | cache write | cache read | output |',
+  '|---|---|---|---|---|---|',
+  ...rows.map(
+    (r) => `| ${r.model} | ${r.effort} | ${r.condition} | ${f0(r.cacheWrite)} | ${f0(r.cacheRead)} | ${f0(r.output)} |`,
+  ),
+);
+
 const probes = runs.filter((r) => r.probe || !r.condition);
 const footer =
   `${runs.length} runs in total (${probes.length} of them probes or debugging, not in the table). ` +
