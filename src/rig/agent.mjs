@@ -68,6 +68,10 @@ export async function runAgent({
   betas,
   tracePath,
   label = '',
+  // Added for context-compaction: compaction can make a run re-query what it
+  // lost, possibly forever. A hard dollar cap per run keeps one pathological
+  // run from eating the whole experiment budget. It stops as 'cost_cap'.
+  maxCostUSD = Infinity,
 }) {
   const messages = [{ role: 'user', content: question }];
   const trace = [];
@@ -126,7 +130,16 @@ export async function runAgent({
       .join('\n')
       .trim();
     const entry = { turn, context, output: u.output_tokens, stop_reason: response.stop_reason, text, calls: [] };
+    // Added for context-compaction: server-side context editing reports what
+    // it cleared only here, so keep it. A refusal says why only here.
+    if (response.context_management) entry.contextManagement = response.context_management;
+    if (response.stop_details) entry.stopDetails = response.stop_details;
     trace.push(entry);
+
+    if (response.stop_reason === 'tool_use' && costOf(model, usage) > maxCostUSD) {
+      stop = 'cost_cap';
+      break;
+    }
 
     if (response.stop_reason !== 'tool_use') {
       stop = response.stop_reason;
