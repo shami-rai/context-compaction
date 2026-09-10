@@ -4,8 +4,10 @@
 // Columns:
 //   answer fetches  how many times get_device was called on the answer device
 //   risk fetches    how many times the answer model's risk ranking was fetched
-//   together        whether the final tool turn fetched both of those at once,
-//                   which is the one shape that survives keep-1 compaction
+//   together        whether the final tool turn fetched the answer record AND the
+//                   comparison's risk score at once, either by re-running the
+//                   risk ranking or by fetching the comparison device's own
+//                   record by id. That is the shape that survives keep-1.
 //   ping-pong       the longest tail of turns alternating between exactly two
 //                   single-call turns, A B A B ..., the livelock seen in keep1
 
@@ -16,6 +18,8 @@ const only = process.argv[2];
 const key = (c) => c.name + JSON.stringify(c.input);
 const isAnswerRecord = (c) => c.name === 'get_device' && c.input?.device_id === ANSWER.device_id;
 const isRiskRanking = (c) => c.name === 'top_devices' && c.input?.field === 'risk_score' && c.input?.model === ANSWER.model;
+const isCompareRecord = (c) =>
+  c.name === 'get_device' && c.input?.device_id === ANSWER.highest_risk_same_model.device_id;
 
 function pingPong(trace) {
   const turns = trace.filter((t) => t.calls?.length).map((t) => (t.calls.length === 1 ? key(t.calls[0]) : null));
@@ -42,7 +46,10 @@ console.log('condition            effort ok  stop       turns calls answer-fetch
 for (const r of rows) {
   const calls = r.trace.flatMap((t) => t.calls ?? []);
   const lastToolTurn = r.trace.filter((t) => t.calls?.length).at(-1);
-  const together = Boolean(lastToolTurn?.calls.some(isAnswerRecord) && lastToolTurn?.calls.some(isRiskRanking));
+  const together = Boolean(
+    lastToolTurn?.calls.some(isAnswerRecord) &&
+      lastToolTurn?.calls.some((c) => isRiskRanking(c) || isCompareRecord(c)),
+  );
   console.log(
     [
       r.condition.padEnd(20),
