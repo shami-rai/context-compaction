@@ -8,6 +8,7 @@
     "smoke": "node --env-file-if-exists=.env scripts/smoke.mjs",
     "exp": "node --env-file-if-exists=.env scripts/experiment.mjs",
     "report": "node scripts/report.mjs",
+    "shapes": "node scripts/shapes.mjs",
     "fleet": "node scripts/generate-fleet.mjs"
   },
   "dependencies": {
